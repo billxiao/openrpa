@@ -84,9 +84,10 @@ namespace OpenRPA.Script
 
             //System.Diagnostics.Debugger.Launch();
             //System.Diagnostics.Debugger.Break();
+            bool hadError = false;
             if (PluginConfig.use_embedded_python)
             {
-                if(!Python.Included.Installer.IsPythonInstalled())
+                if (!Python.Included.Installer.IsPythonInstalled())
                 {
                     Python.Included.Installer.SetupPython(true).Wait();
                 }
@@ -95,17 +96,35 @@ namespace OpenRPA.Script
                     Python.Included.Installer.SetupPython(false).Wait();
                 }
                 var path = Python.Included.Installer.EmbeddedPythonHome;
-                PythonUtil.Setup.SetPythonPath(path);
+                PythonUtil.Setup.SetPythonPath(path, true);
                 // Python.Runtime.PythonEngine.Initialize();
-            } else
-            {
-                PythonUtil.Setup.Run();
             }
-
-
+            else
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(PluginConfig.python_exe_path)) PythonUtil.Setup.SetPythonPath(PluginConfig.python_exe_path, false);
+                    PythonUtil.Setup.Run();
+                }
+                catch (Exception ex)
+                {
+                    hadError = true;
+                    Log.Error(ex.ToString());
+                }
+            }
             // PythonUtil.Setup.Run();
             //Python.Runtime.PythonEngine.Initialize();
-            _ = Python.Runtime.PythonEngine.BeginAllowThreads();
+            if (!hadError)
+            {
+                //try
+                //{
+                //    _ = Python.Runtime.PythonEngine.BeginAllowThreads();
+                //}
+                //catch (Exception ex)
+                //{
+                //    Log.Error(ex.ToString());
+                //}
+            }
             //if (InvokeCode.pool == null)
             //{
             //    InvokeCode.pool = RunspaceFactory.CreateRunspacePool(1, 5);
